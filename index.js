@@ -8,7 +8,7 @@ const { Pool } = require('pg');
 // PostgreSQL bağlantısı
 const DB_CONFIG = {
   host: 'postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}',
-  port: '${{Postgres.PGPORT}}',
+  port: 5432,
   user: '${{Postgres.PGUSER}}',
   password: '${{Postgres.PGPASSWORD}}',
   database: '${{Postgres.POSTGRES_DB}}'
