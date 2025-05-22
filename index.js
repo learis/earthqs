@@ -22,7 +22,7 @@ async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS earthquakes (
       uid TEXT PRIMARY KEY,
       tarih DATE,
-      saat TIME,
+      saat TEXT,
       enlem REAL,
       boylam REAL,
       derinlik REAL,
