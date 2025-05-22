@@ -5,7 +5,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { Pool } = require('pg');
 
-// PostgreSQL bağlantısı (placeholder’lar senin config’ine göre değiştirilmeli)
+// PostgreSQL bağlantısı
 const DB_CONFIG = {
   host: 'your_host',
   port: 5432,
