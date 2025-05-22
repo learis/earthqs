@@ -7,11 +7,11 @@ const { Pool } = require('pg');
 
 // PostgreSQL bağlantısı
 const DB_CONFIG = {
-  host: 'your_host',
-  port: 5432,
-  user: 'your_user',
-  password: 'your_password',
-  database: 'earthqdb'
+  host: ${{Postgres.DATABASE_URL}},
+  port: ${{Postgres.PGPORT}},
+  user: ${{Postgres.PGUSER}},
+  password: ${{Postgres.PGPASSWORD}},
+  database: ${{Postgres.POSTGRES_DB}}
 };
 
 const pool = new Pool(DB_CONFIG);
