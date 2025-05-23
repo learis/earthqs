@@ -24,7 +24,6 @@ async function initializeDatabase() {
       derinlik REAL,
       buyukluk REAL,
       yer TEXT,
-      sehir TEXT,
       bolge TEXT
     );
   `;
@@ -72,7 +71,6 @@ async function fetchAndSaveEarthquakes() {
       // Yer ve bolge bilgisi
       const yerHam = parts.slice(7).join(' ').trim();
       let yer = yerHam;
-      let sehir = null;
       let bolge = null;
 
       const parantezMatch = yerHam.match(/^(.*)\s+\(([^)]+)\)$/);
@@ -84,11 +82,12 @@ async function fetchAndSaveEarthquakes() {
       const uuid = generateUUID(tarih, saat, enlem, boylam);
 
       const insertQuery = `
-        INSERT INTO earthquakes(uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, sehir, bolge)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        INSERT INTO earthquakes(uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (uuid) DO NOTHING;
       `;
-      const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, sehir, bolge];
+      
+      const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge];
 
       try {
         await pool.query(insertQuery, values);
