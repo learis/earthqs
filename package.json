@@ -1,14 +1,13 @@
 {
-  "name": "earthquake-fetcher",
+  "name": "afad-earthquake-fetcher",
   "version": "1.0.0",
-  "description": "EarthQs railway fetcher",
+  "description": "Fetches earthquake data from AFAD and stores it in a PostgreSQL database",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.6.7",
-    "cheerio": "^1.0.0-rc.12",
     "pg": "^8.11.1"
   }
 }
