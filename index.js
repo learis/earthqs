@@ -70,7 +70,7 @@ async function fetchAndSaveEarthquakes() {
 
       const insertQuery = `
         INSERT INTO earthquakes(uuid, date, time, latitude, longitude, depth, type, magnitude, location)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
         ON CONFLICT (uuid) DO NOTHING;
       `;
 
