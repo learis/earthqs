@@ -44,16 +44,18 @@ async function fetchAndSaveEarthquakes() {
     const response = await axios.get('http://www.koeri.boun.edu.tr/scripts/lst6.asp');
     const html = response.data;
     const $ = cheerio.load(html);
-    const rows = $('pre').text().split('\n').slice(7);
+
+    // 🔁 Tüm kayıtları regex ile düzgün ayır
+    const raw = $('pre').text();
+    const rowRegex = /\d{4}\.\d{2}\.\d{2}.*?(?=\n\d{4}\.\d{2}\.\d{2}|$)/gs;
+    const rows = [...raw.matchAll(rowRegex)].map(m => m[0].trim());
 
     console.log(`Toplam satır sayısı: ${rows.length}`);
 
     for (const row of rows) {
       const parts = row.trim().split(/\s+/);
-
-      // ✅ Satır en az 10 parça olmalı (ML + yer dahil)
       if (parts.length < 10) {
-        console.warn('Yetersiz veri, atlanıyor:', row);
+        console.warn('Yetersiz sütun, atlandı:', row);
         continue;
       }
 
@@ -61,7 +63,7 @@ async function fetchAndSaveEarthquakes() {
       const saat = parts[1];
       const enlem = parseFloat(parts[2]);
       const boylam = parseFloat(parts[3]);
-      const derinlik = parseFloat(parts[4]?.replace(',', '.'));
+      const derinlik = parseFloat(parts[4].replace(',', '.'));
       const rawBuyukluk = parts[6];
       const buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
 
@@ -69,11 +71,11 @@ async function fetchAndSaveEarthquakes() {
         !tarih || !saat || isNaN(enlem) || isNaN(boylam) ||
         isNaN(derinlik) || buyukluk === null || isNaN(buyukluk)
       ) {
-        console.warn('Geçersiz değerler, atlanıyor:', row);
+        console.warn('Geçersiz veri, atlandı:', row);
         continue;
       }
 
-      // ✅ Yer verisi = parts[9] ve sonrası
+      // 🧠 Yer = parts[9] ve sonrası
       const yerHam = parts.slice(9).join(' ').trim();
       let yer = yerHam;
       let bolge = null;
@@ -91,8 +93,12 @@ async function fetchAndSaveEarthquakes() {
         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (uuid) DO NOTHING;
       `;
-
       const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge];
+
+      if (values.length !== 10) {
+        console.warn('Hatalı değer sayısı, atlandı:', values);
+        continue;
+      }
 
       try {
         await pool.query(insertQuery, values);
