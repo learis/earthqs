@@ -55,8 +55,8 @@ async function fetchAndSave() {
       const time = parts[1];
       const lat = parts[2];
       const lon = parts[3];
-      const depth = parseFloat(parts[4].replace(',', '.'));
-      const magnitude = parseFloat(parts[6].replace(',', '.'));
+      const depth = parseFloat(parts[4].replace(',', '.')) || 0.0;
+      const magnitude = parseFloat(parts[6].replace(',', '.')) || 0.0;
 
       const yerHam = parts.slice(9, parts.length - 1).join(' ').trim();
       let place = yerHam;
@@ -66,6 +66,12 @@ async function fetchAndSave() {
       if (match) {
         area = match[1].trim();
         place = match[2].trim();
+      }
+
+      // Parantezleri temizle (EGE DENIZI gibi durumları düzelt)
+      if (!match && yerHam.startsWith('(') && yerHam.endsWith(')')) {
+        place = yerHam.slice(1, -1).trim();
+        area = null;
       }
 
       const typeRaw = parts[parts.length - 1];
@@ -79,7 +85,7 @@ async function fetchAndSave() {
         ON CONFLICT (uuid) DO NOTHING;
       `;
 
-      const values = [uuid, date, time, lat, lon, depth, magnitude, place, area, type];
+      const values = [uuid, date, time, lat, lon, parseFloat(depth.toFixed(1)), parseFloat(magnitude.toFixed(1)), place, area, type];
 
       try {
         await pool.query(insertQuery, values);
