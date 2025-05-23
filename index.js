@@ -18,7 +18,7 @@ async function initializeDatabase() {
       id SERIAL PRIMARY KEY,
       uuid TEXT UNIQUE,
       tarih DATE,
-      saat TIME,
+      saat TEXT,
       enlem REAL,
       boylam REAL,
       derinlik REAL,
