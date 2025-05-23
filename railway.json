@@ -6,9 +6,8 @@
   },
   "services": {
     "earthquake-worker": {
-      "command": "node index.js",
+      "startCommand": "node index.js",
       "env": ".env",
-      "start": true,
       "runOnStartup": true
     }
   }
