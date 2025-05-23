@@ -1,4 +1,3 @@
-// index.js
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { Pool } = require('pg');
@@ -33,10 +32,10 @@ async function initializeDatabase() {
 }
 
 function generateUUID(date, time, lat, lon) {
-  const d = date.replace(/\./g, '');
-  const t = time.replace(/:/g, '');
-  const latFixed = lat.replace(/\./g, '');
-  const lonFixed = lon.replace(/\./g, '');
+  const d = date.replace(/[^0-9]/g, '');
+  const t = time.replace(/[^0-9]/g, '');
+  const latFixed = lat.replace(/[^0-9]/g, '');
+  const lonFixed = lon.replace(/[^0-9]/g, '');
   return `${d}${t}${latFixed}${lonFixed}`;
 }
 
@@ -58,8 +57,8 @@ async function fetchAndSave() {
       const lon = parts[3];
       const depth = parseFloat(parts[4].replace(',', '.'));
       const magnitude = parseFloat(parts[6].replace(',', '.'));
-      const yerHam = parts.slice(9).join(' ');
 
+      const yerHam = parts.slice(9, parts.length - 1).join(' ').trim();
       let place = yerHam;
       let area = null;
 
@@ -69,7 +68,9 @@ async function fetchAndSave() {
         place = match[2].trim();
       }
 
-      const type = parts[parts.length - 1].toLowerCase();
+      const typeRaw = parts[parts.length - 1];
+      const type = typeRaw.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
       const uuid = generateUUID(date, time, lat, lon);
 
       const insertQuery = `
