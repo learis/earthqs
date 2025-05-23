@@ -68,8 +68,12 @@ async function fetchAndSaveEarthquakes() {
           break;
         }
       }
+      
+      // ML büyüklüğü doğrudan 7. sütunda (index 6)
+      const rawBuyukluk = parts[6];
+      const buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
       if (buyukluk === null || isNaN(buyukluk)) {
-        console.log('ML büyüklüğü bulunamadı, satır atlandı:', row);
+        console.log('ML büyüklüğü alınamadı, atlandı:', row);
         continue;
       }
 
