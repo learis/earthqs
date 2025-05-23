@@ -39,6 +39,22 @@ function generateUUID(date, time, lat, lon) {
   return `${d}${t}${latFixed}${lonFixed}`;
 }
 
+function cleanTurkish(str) {
+  return str
+    .replace(/İ/g, 'I')
+    .replace(/Ş/g, 'S')
+    .replace(/Ğ/g, 'G')
+    .replace(/Ü/g, 'U')
+    .replace(/Ö/g, 'O')
+    .replace(/Ç/g, 'C')
+    .replace(/ı/g, 'i')
+    .replace(/ş/g, 's')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c');
+}
+
 async function fetchAndSave() {
   try {
     const response = await axios.get('http://www.koeri.boun.edu.tr/scripts/lst0.asp');
@@ -68,14 +84,13 @@ async function fetchAndSave() {
         place = match[2].trim();
       }
 
-      // Parantezleri temizle (EGE DENIZI gibi durumları düzelt)
       if (!match && yerHam.startsWith('(') && yerHam.endsWith(')')) {
         place = yerHam.slice(1, -1).trim();
         area = null;
       }
 
       const typeRaw = parts[parts.length - 1];
-      const type = typeRaw.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+      const type = cleanTurkish(typeRaw).toLowerCase();
 
       const uuid = generateUUID(date, time, lat, lon);
 
