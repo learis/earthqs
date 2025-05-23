@@ -1,7 +1,7 @@
 {
   "name": "earthquake-fetcher",
   "version": "1.0.0",
-  "description": "Kandilli Rasathanesi'nden veri çeken ve Railway PostgreSQL'e yazan servis",
+  "description": "EarthQs railway fetcher",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
