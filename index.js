@@ -58,18 +58,17 @@ async function fetchAndSaveEarthquakes() {
       const boylam = parseFloat(parts[3]);
       const derinlik = parseFloat(parts[4].replace(',', '.'));
 
-      // ML büyüklüğü doğrudan parts[6]'da (7. sütun)
-      let buyukluk = null;
+      // ML büyüklüğü doğrudan 7. sütunda (parts[6])
       const rawBuyukluk = parts[6];
-      buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
-
+      let buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
       if (buyukluk === null || isNaN(buyukluk)) {
         console.log('ML büyüklüğü alınamadı, atlandı:', row);
         continue;
       }
 
-      // Yer ve bolge bilgisi
-      const yerHam = parts.slice(7).join(' ').trim();
+      // Yer ve bölge bilgisi (parantez içi bolge)
+      const yerIndex = 7;
+      const yerHam = parts.slice(yerIndex).join(' ').trim();
       let yer = yerHam;
       let bolge = null;
 
@@ -86,7 +85,6 @@ async function fetchAndSaveEarthquakes() {
         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (uuid) DO NOTHING;
       `;
-      
       const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge];
 
       try {
