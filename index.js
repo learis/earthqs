@@ -26,6 +26,7 @@ async function initializeDatabase() {
     );
   `;
   await pool.query(query);
+  console.log("DB initiated");
 }
 
 async function fetchAndSaveEarthquakes() {
@@ -64,7 +65,9 @@ async function fetchAndSaveEarthquakes() {
 
       try {
         await pool.query(insertQuery, values);
+        console.log("insert query executed successfully");
       } catch (err) {
+        console.log("insert query failed: ", err.message);
         console.error('Insert error:', err.message);
       }
     }
@@ -72,6 +75,7 @@ async function fetchAndSaveEarthquakes() {
     console.log(`[${new Date().toISOString()}] Earthquake check completed.`);
   } catch (err) {
     console.error('Fetch error:', err.message);
+    console.log("Fetching failed: ", err.message);
   }
 }
 
