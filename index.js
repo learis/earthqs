@@ -50,24 +50,23 @@ async function fetchAndSaveEarthquakes() {
 
     for (const row of rows) {
       const parts = row.trim().split(/\s+/);
-      if (parts.length < 7) continue;
+      if (parts.length < 10) continue; // daha azsa atla
 
       const tarih = parts[0].replace(/\./g, '-');
       const saat = parts[1];
       const enlem = parseFloat(parts[2]);
       const boylam = parseFloat(parts[3]);
       const derinlik = parseFloat(parts[4].replace(',', '.'));
+
       const rawBuyukluk = parts[6];
       const buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
-
       if (buyukluk === null || isNaN(buyukluk)) {
         console.log('ML büyüklüğü alınamadı, atlandı:', row);
         continue;
       }
 
-      // Yer: ML sonrası tüm kalanlar
-      const yerParts = parts.slice(7);
-      const yerHam = yerParts.join(' ').trim();
+      // Yer bilgisi: parts[9] ve sonrası ("İlksel" vs. dahil değil)
+      const yerHam = parts.slice(9).join(' ').trim();
       let yer = yerHam;
       let bolge = null;
 
@@ -81,16 +80,10 @@ async function fetchAndSaveEarthquakes() {
 
       const insertQuery = `
         INSERT INTO earthquakes(uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (uuid) DO NOTHING;
       `;
       const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge];
-
-      // ✅ Debug: kaç değer gönderiyoruz?
-      if (values.length !== 10) {
-        console.error('🛑 Değer sayısı SQL ile uyuşmuyor!', values);
-        continue;
-      }
 
       try {
         await pool.query(insertQuery, values);
