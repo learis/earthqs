@@ -1,10 +1,15 @@
 {
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
+  "plugins": {
+    "postgresql": {
+      "source": "railway"
     }
   },
-  "deploy": {
-    "startCommand": "npm start"
+  "services": {
+    "earthquake-worker": {
+      "command": "node index.js",
+      "env": ".env",
+      "start": true,
+      "runOnStartup": true
+    }
   }
 }
