@@ -18,6 +18,7 @@ async function initializeDatabase() {
       id SERIAL PRIMARY KEY,
       uuid TEXT UNIQUE,
       date DATE,
+      time TEXT,
       latitude FLOAT,
       longitude FLOAT,
       depth FLOAT,
@@ -37,10 +38,11 @@ function generateUUID(datetime, latitude, longitude) {
 }
 
 function parseDateTime(datetimeStr) {
-  // TS: "2024-05-23 15:42:17"
+  // TS: "2025-05-23 21:57:08"
   const [date, time] = datetimeStr.split(' ');
   return {
     dateOnly: date,
+    timeOnly: time,
     dateTimeCompact: date.replace(/-/g, '') + time.replace(/:/g, '')
   };
 }
@@ -63,18 +65,19 @@ async function fetchAndSaveEarthquakes() {
       const magnitude = parseFloat($(columns[5]).text().trim().replace(',', '.'));
       const location = $(columns[6]).text().trim();
 
-      const { dateOnly, dateTimeCompact } = parseDateTime(ts);
+      const { dateOnly, timeOnly, dateTimeCompact } = parseDateTime(ts);
       const uuid = generateUUID(dateTimeCompact, latitude, longitude);
 
       const insertQuery = `
-        INSERT INTO earthquakes(uuid, date, latitude, longitude, depth, type, magnitude, location)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO earthquakes(uuid, date, time, latitude, longitude, depth, type, magnitude, location)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (uuid) DO NOTHING;
       `;
 
       const values = [
         uuid,
         dateOnly,
+        timeOnly,
         latitude,
         longitude,
         depth,
