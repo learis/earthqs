@@ -65,13 +65,12 @@ async function fetchAndSaveEarthquakes() {
         continue;
       }
 
-      // Yer verisi, ML'den sonraki tüm parçalar
+      // Yer: ML sonrası tüm kalanlar
       const yerParts = parts.slice(7);
       const yerHam = yerParts.join(' ').trim();
       let yer = yerHam;
       let bolge = null;
 
-      // Parantez varsa: yer = parantez içi, bolge = parantez dışı
       const parantezMatch = yerHam.match(/^(.*)\s+\(([^)]+)\)$/);
       if (parantezMatch) {
         bolge = parantezMatch[1].trim();
@@ -86,6 +85,12 @@ async function fetchAndSaveEarthquakes() {
         ON CONFLICT (uuid) DO NOTHING;
       `;
       const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge];
+
+      // ✅ Debug: kaç değer gönderiyoruz?
+      if (values.length !== 10) {
+        console.error('🛑 Değer sayısı SQL ile uyuşmuyor!', values);
+        continue;
+      }
 
       try {
         await pool.query(insertQuery, values);
