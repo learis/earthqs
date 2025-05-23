@@ -1,3 +1,4 @@
+// index.js
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { Pool } = require('pg');
@@ -13,113 +14,87 @@ const DB_CONFIG = {
 const pool = new Pool(DB_CONFIG);
 
 async function initializeDatabase() {
-  const createTableQuery = `
+  const query = `
     CREATE TABLE IF NOT EXISTS earthquakes (
       id SERIAL PRIMARY KEY,
       uuid TEXT UNIQUE,
-      tarih DATE,
-      saat TEXT,
-      enlem REAL,
-      boylam REAL,
-      derinlik REAL,
-      buyukluk REAL,
-      yer TEXT,
-      bolge TEXT
+      date DATE,
+      time TEXT,
+      lat TEXT,
+      lon TEXT,
+      depth FLOAT,
+      magnitude FLOAT,
+      place TEXT,
+      area TEXT,
+      type TEXT
     );
   `;
-  await pool.query(createTableQuery);
+  await pool.query(query);
 }
 
-function generateUUID(tarih, saat, enlem, boylam) {
-  const datePart = tarih.replace(/-/g, '');
-  const timePart = saat.replace(/:/g, '');
-  const latPart = enlem.toString().replace('.', '');
-  const lonPart = boylam.toString().replace('.', '');
-  return `${datePart}${timePart}${latPart}${lonPart}`;
+function generateUUID(date, time, lat, lon) {
+  const d = date.replace(/\./g, '');
+  const t = time.replace(/:/g, '');
+  const latFixed = lat.replace(/\./g, '');
+  const lonFixed = lon.replace(/\./g, '');
+  return `${d}${t}${latFixed}${lonFixed}`;
 }
 
-async function fetchAndSaveEarthquakes() {
+async function fetchAndSave() {
   try {
-    console.log('Veri çekiliyor...');
-    const response = await axios.get('http://www.koeri.boun.edu.tr/scripts/lst6.asp');
-    const html = response.data;
-    const $ = cheerio.load(html);
-
-    // 🔁 Tüm kayıtları regex ile düzgün ayır
+    const response = await axios.get('http://www.koeri.boun.edu.tr/scripts/lst0.asp');
+    const $ = cheerio.load(response.data);
     const raw = $('pre').text();
     const rowRegex = /\d{4}\.\d{2}\.\d{2}.*?(?=\n\d{4}\.\d{2}\.\d{2}|$)/gs;
     const rows = [...raw.matchAll(rowRegex)].map(m => m[0].trim());
 
-    console.log(`Toplam satır sayısı: ${rows.length}`);
-
     for (const row of rows) {
       const parts = row.trim().split(/\s+/);
-      if (parts.length < 10) {
-        console.warn('Yetersiz sütun, atlandı:', row);
-        continue;
+      if (parts.length < 10) continue;
+
+      const date = parts[0].replace(/\./g, '-');
+      const time = parts[1];
+      const lat = parts[2];
+      const lon = parts[3];
+      const depth = parseFloat(parts[4].replace(',', '.'));
+      const magnitude = parseFloat(parts[6].replace(',', '.'));
+      const yerHam = parts.slice(9).join(' ');
+
+      let place = yerHam;
+      let area = null;
+
+      const match = yerHam.match(/^(.*)\s+\(([^)]+)\)$/);
+      if (match) {
+        area = match[1].trim();
+        place = match[2].trim();
       }
 
-      const tarih = parts[0]?.replace(/\./g, '-');
-      const saat = parts[1];
-      const enlem = parseFloat(parts[2]);
-      const boylam = parseFloat(parts[3]);
-      const derinlik = parseFloat(parts[4].replace(',', '.'));
-      const rawBuyukluk = parts[6];
-      const buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
-
-      if (
-        !tarih || !saat || isNaN(enlem) || isNaN(boylam) ||
-        isNaN(derinlik) || buyukluk === null || isNaN(buyukluk)
-      ) {
-        console.warn('Geçersiz veri, atlandı:', row);
-        continue;
-      }
-
-      // 🧠 Yer = parts[9] ve sonrası
-      const yerHam = parts.slice(9).join(' ').trim();
-      let yer = yerHam;
-      let bolge = null;
-
-      const parantezMatch = yerHam.match(/^(.*)\s+\(([^)]+)\)$/);
-      if (parantezMatch) {
-        bolge = parantezMatch[1].trim();
-        yer = parantezMatch[2].trim();
-      }
-
-      const uuid = generateUUID(tarih, saat, enlem, boylam);
+      const type = parts[parts.length - 1].toLowerCase();
+      const uuid = generateUUID(date, time, lat, lon);
 
       const insertQuery = `
-        INSERT INTO earthquakes(uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        INSERT INTO earthquakes(uuid, date, time, lat, lon, depth, magnitude, place, area, type)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         ON CONFLICT (uuid) DO NOTHING;
       `;
-      const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, bolge];
 
-      if (values.length !== 10) {
-        console.warn('Hatalı değer sayısı, atlandı:', values);
-        continue;
-      }
+      const values = [uuid, date, time, lat, lon, depth, magnitude, place, area, type];
 
       try {
         await pool.query(insertQuery, values);
       } catch (err) {
-        console.error('Veri ekleme hatası:', err.message, 'Veri:', values);
+        console.error('DB Insert Error:', err.message);
       }
     }
 
     console.log(`[${new Date().toISOString()}] Veri kontrolü tamamlandı.`);
-  } catch (err) {
-    console.error('Veri çekme hatası:', err.message);
+  } catch (error) {
+    console.error('Fetch Error:', error.message);
   }
 }
 
 (async () => {
-  try {
-    await initializeDatabase();
-    console.log('Script başlatıldı...');
-    await fetchAndSaveEarthquakes();
-    setInterval(fetchAndSaveEarthquakes, 30000);
-  } catch (err) {
-    console.error('Başlatma hatası:', err.message);
-  }
+  await initializeDatabase();
+  await fetchAndSave();
+  setInterval(fetchAndSave, 30000);
 })();
