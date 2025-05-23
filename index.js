@@ -57,25 +57,25 @@ async function fetchAndSaveEarthquakes() {
       const enlem = parseFloat(parts[2]);
       const boylam = parseFloat(parts[3]);
       const derinlik = parseFloat(parts[4].replace(',', '.'));
-
-      // ML büyüklüğü doğrudan 7. sütunda (parts[6])
       const rawBuyukluk = parts[6];
-      let buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
+      const buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
+
       if (buyukluk === null || isNaN(buyukluk)) {
         console.log('ML büyüklüğü alınamadı, atlandı:', row);
         continue;
       }
 
-      // Yer ve bölge bilgisi (parantez içi bolge)
-      const yerIndex = 7;
-      const yerHam = parts.slice(yerIndex).join(' ').trim();
+      // Yer verisi, ML'den sonraki tüm parçalar
+      const yerParts = parts.slice(7);
+      const yerHam = yerParts.join(' ').trim();
       let yer = yerHam;
       let bolge = null;
 
+      // Parantez varsa: yer = parantez içi, bolge = parantez dışı
       const parantezMatch = yerHam.match(/^(.*)\s+\(([^)]+)\)$/);
       if (parantezMatch) {
-        yer = parantezMatch[1].trim();
-        bolge = parantezMatch[2].trim();
+        bolge = parantezMatch[1].trim();
+        yer = parantezMatch[2].trim();
       }
 
       const uuid = generateUUID(tarih, saat, enlem, boylam);
