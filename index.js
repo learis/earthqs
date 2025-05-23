@@ -41,10 +41,14 @@ function generateUUID(tarih, saat, enlem, boylam) {
 
 async function fetchAndSaveEarthquakes() {
   try {
+    console.log('Veri çekiliyor...');
     const response = await axios.get('http://www.koeri.boun.edu.tr/scripts/lst6.asp');
     const html = response.data;
     const $ = cheerio.load(html);
     const rows = $('pre').text().split('\n').slice(7);
+
+    console.log('Çekilen satır sayısı:', rows.length);
+    console.log('İlk satır örneği:', rows[0]);
 
     for (const row of rows) {
       const parts = row.trim().split(/\s+/);
@@ -64,7 +68,10 @@ async function fetchAndSaveEarthquakes() {
           break;
         }
       }
-      if (buyukluk === null || isNaN(buyukluk)) continue; // ML yoksa geç
+      if (buyukluk === null || isNaN(buyukluk)) {
+        console.log('ML büyüklüğü bulunamadı, satır atlandı:', row);
+        continue;
+      }
 
       // ML sonrası kalanlar yer bilgisi (Mw veya MD varsa atlanmış olur)
       const yerIndex = parts.findIndex(p => p.startsWith('ML'));
@@ -83,23 +90,29 @@ async function fetchAndSaveEarthquakes() {
 
       const insertQuery = `
         INSERT INTO earthquakes(uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, sehir, bolge)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         ON CONFLICT (uuid) DO NOTHING;
       `;
       const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, sehir, bolge];
-      await pool.query(insertQuery, values);
+      try {
+        await pool.query(insertQuery, values);
+      } catch (err) {
+        console.error('Veri ekleme hatası:', err.message, 'Veri:', values);
+      }
     }
 
     console.log(`[${new Date().toISOString()}] Veri kontrolü tamamlandı.`);
   } catch (err) {
-    console.error('Hata:', err.message);
+    console.error('Veri çekme hatası:', err.message);
   }
 }
 
 (async () => {
   try {
     await initializeDatabase();
+    console.log('DB initialize edildi...');
     await fetchAndSaveEarthquakes();
+    console.log('EQs fetch islemi baslatildi...')
     setInterval(fetchAndSaveEarthquakes, 30000);
   } catch (err) {
     console.error('Başlatma hatası:', err.message);
