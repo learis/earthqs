@@ -26,13 +26,20 @@ async function initializeDatabase() {
     );
   `;
   await pool.query(query);
-  console.log("DB initiated");
+}
+
+function parseAfadDate(dateStr) {
+  // AFAD format: 23-05-2025 21:55:34 → needs to become YYYY-MM-DD
+  const [day, month, year] = dateStr.split(' ')[0].split('-');
+  return `${year}-${month}-${day}`;
 }
 
 async function fetchAndSaveEarthquakes() {
   try {
     const response = await axios.get('https://deprem.afad.gov.tr/last-earthquakes');
     const earthquakes = response.data.result || [];
+
+    console.log(`Fetched ${earthquakes.length} earthquakes from AFAD.`);
 
     for (const quake of earthquakes) {
       const {
@@ -46,14 +53,9 @@ async function fetchAndSaveEarthquakes() {
         eventID
       } = quake;
 
-      const insertQuery = `
-        INSERT INTO earthquakes(date, latitude, longitude, depth, type, magnitude, location, eventID)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8)
-        ON CONFLICT (eventID) DO NOTHING;
-      `;
-
+      const parsedDate = parseAfadDate(date);
       const values = [
-        new Date(date).toISOString().split('T')[0],
+        parsedDate,
         parseFloat(latitude),
         parseFloat(longitude),
         parseFloat(depth),
@@ -63,19 +65,24 @@ async function fetchAndSaveEarthquakes() {
         parseInt(eventID)
       ];
 
+      console.log('Inserting values:', values);
+
+      const insertQuery = `
+        INSERT INTO earthquakes(date, latitude, longitude, depth, type, magnitude, location, eventID)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+        ON CONFLICT (eventID) DO NOTHING;
+      `;
+
       try {
         await pool.query(insertQuery, values);
-        console.log("insert query executed successfully");
       } catch (err) {
-        console.log("insert query failed: ", err.message);
-        console.error('Insert error:', err.message);
+        console.error('Insert error:', err.message, 'Data:', values);
       }
     }
 
     console.log(`[${new Date().toISOString()}] Earthquake check completed.`);
   } catch (err) {
     console.error('Fetch error:', err.message);
-    console.log("Fetching failed: ", err.message);
   }
 }
 
