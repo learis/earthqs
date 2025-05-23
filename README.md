@@ -1,22 +1,40 @@
-# EarthQs Fetcher
+# AFAD Earthquake Fetcher
 
-This service fetches data from Kandilli Observatory every 30 seconds and stores it in the Railway PostgreSQL instance.
+This Node.js service fetches the latest earthquake data from [AFAD](https://deprem.afad.gov.tr/last-earthquakes) every 30 seconds and stores new entries into a PostgreSQL database.
 
-## Env Vars (.env)
-- `PGHOST` → DB host
-- `PGPORT` → DB port
-- `PGUSER` → DB user
-- `PGPASSWORD` → DB password
-- `PGDATABASE` → DB name
+## Environment Variables
+Copy `.env.example` to `.env` and fill in your database connection details:
+
+```
+PGHOST=your_postgres_host
+PGPORT=5432
+PGUSER=your_postgres_user
+PGPASSWORD=your_postgres_password
+PGDATABASE=your_postgres_database
+```
 
 ## Installation
-```
+```bash
 npm install
 ```
 
-## Start
-```
+## Running the App
+```bash
 npm start
 ```
 
-This script should be configured as a continuously running worker on Railway.
+## Table Schema
+```
+id         SERIAL PRIMARY KEY
+date       DATE
+latitude   FLOAT
+longitude  FLOAT
+depth      FLOAT
+type       TEXT
+magnitude  FLOAT
+location   TEXT
+eventID    INTEGER UNIQUE
+```
+
+## Deployment
+This app is designed to run continuously (e.g., on Railway) as a cron-like worker service.
