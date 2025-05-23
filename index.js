@@ -47,8 +47,7 @@ async function fetchAndSaveEarthquakes() {
     const $ = cheerio.load(html);
     const rows = $('pre').text().split('\n').slice(7);
 
-    console.log('Çekilen satır sayısı:', rows.length);
-    console.log('İlk satır örneği:', rows[0]);
+    console.log(`Toplam satır sayısı: ${rows.length}`);
 
     for (const row of rows) {
       const parts = row.trim().split(/\s+/);
@@ -60,26 +59,18 @@ async function fetchAndSaveEarthquakes() {
       const boylam = parseFloat(parts[3]);
       const derinlik = parseFloat(parts[4].replace(',', '.'));
 
-      // Büyüklük tipi ML olanı bul
+      // ML büyüklüğü doğrudan parts[6]'da (7. sütun)
       let buyukluk = null;
-      for (let i = 6; i < parts.length; i++) {
-        if (parts[i].startsWith('ML')) {
-          buyukluk = parseFloat(parts[i + 1]?.replace(',', '.') || 'NaN');
-          break;
-        }
-      }
-      
-      // ML büyüklüğü doğrudan 7. sütunda (index 6)
       const rawBuyukluk = parts[6];
-      const buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
+      buyukluk = rawBuyukluk === '-.-' ? null : parseFloat(rawBuyukluk.replace(',', '.'));
+
       if (buyukluk === null || isNaN(buyukluk)) {
         console.log('ML büyüklüğü alınamadı, atlandı:', row);
         continue;
       }
 
-      // ML sonrası kalanlar yer bilgisi (Mw veya MD varsa atlanmış olur)
-      const yerIndex = parts.findIndex(p => p.startsWith('ML'));
-      const yerHam = parts.slice(yerIndex + 2).join(' ').trim();
+      // Yer ve bolge bilgisi
+      const yerHam = parts.slice(7).join(' ').trim();
       let yer = yerHam;
       let sehir = null;
       let bolge = null;
@@ -98,6 +89,7 @@ async function fetchAndSaveEarthquakes() {
         ON CONFLICT (uuid) DO NOTHING;
       `;
       const values = [uuid, tarih, saat, enlem, boylam, derinlik, buyukluk, yer, sehir, bolge];
+
       try {
         await pool.query(insertQuery, values);
       } catch (err) {
@@ -114,9 +106,8 @@ async function fetchAndSaveEarthquakes() {
 (async () => {
   try {
     await initializeDatabase();
-    console.log('DB initialize edildi...');
+    console.log('Script başlatıldı...');
     await fetchAndSaveEarthquakes();
-    console.log('EQs fetch islemi baslatildi...')
     setInterval(fetchAndSaveEarthquakes, 30000);
   } catch (err) {
     console.error('Başlatma hatası:', err.message);
