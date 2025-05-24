@@ -15,8 +15,7 @@ const pool = new Pool(DB_CONFIG);
 async function initializeDatabase() {
   const query = `
     CREATE TABLE IF NOT EXISTS earthquakes (
-      id SERIAL PRIMARY KEY,
-      uuid TEXT UNIQUE,
+      uuid TEXT UNIQUE PRIMARY KEY,
       date DATE,
       time TEXT,
       latitude FLOAT,
