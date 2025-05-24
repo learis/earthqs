@@ -25,8 +25,7 @@ npm start
 
 ## Table Schema
 ```
-id         SERIAL PRIMARY KEY
-uuid       TEXT
+uuid       TEXT UNIQUE PRIMARY KEY
 date       DATE
 TIME       TEXT
 latitude   FLOAT
